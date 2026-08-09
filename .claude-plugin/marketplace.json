@@ -1,0 +1,15 @@
+{
+  "name": "lej",
+  "description": "Jonathan Edwards' Claude Code plugins. Currently: lej-output-fixer, which makes Claude readable again.",
+  "owner": {
+    "name": "Jonathan Edwards",
+    "url": "https://github.com/justfinethanku"
+  },
+  "plugins": [
+    {
+      "name": "lej-output-fixer",
+      "source": "./",
+      "description": "Fix hard-to-read Claude output in one install. Three ready-made output styles plus a /style picker that works in the CLI and the Desktop app."
+    }
+  ]
+}

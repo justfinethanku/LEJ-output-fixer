@@ -1,0 +1,11 @@
+{
+  "name": "lej-output-fixer",
+  "version": "1.0.0",
+  "description": "Fix hard-to-read Claude output in one install. Three ready-made output styles plus a /style picker that works in the CLI and the Desktop app.",
+  "author": {
+    "name": "Jonathan Edwards",
+    "url": "https://github.com/justfinethanku"
+  },
+  "homepage": "https://github.com/justfinethanku/LEJ-output-fixer",
+  "keywords": ["output-styles", "readability", "formatting", "tone"]
+}
