@@ -28,7 +28,10 @@ Use the AskUserQuestion tool — never make the user type a style name freehand.
 
 ## Step 3 — Apply the choice
 
-- **A style was chosen**: write `"outputStyle": "<style name>"` into `~/.claude/settings.json` (applies everywhere). If the user says they want it only for this project, use `.claude/settings.local.json` instead. Edit JSON carefully — preserve all existing keys. Use `jq` or a small `python3` round-trip, never a blind overwrite.
+- **A style was chosen**: write `"outputStyle": "<reference>"` into `~/.claude/settings.json` (applies everywhere). If the user says they want it only for this project, use `.claude/settings.local.json` instead. Edit JSON carefully — preserve all existing keys. Use `jq` or a small `python3` round-trip, never a blind overwrite.
+- **The reference format matters.** Styles bundled in a plugin only resolve with the plugin namespace prefix; bare names silently do nothing. Exact values:
+  - This plugin's styles: `lej-output-fixer:Scannable`, `lej-output-fixer:Bottom Line First`, `lej-output-fixer:Walk Me Through It`
+  - Built-in and user-created styles: the plain style name (e.g. `Explanatory`, or the `name` from the user's own file)
 - **Precedence check**: if a more-specific settings file already sets `outputStyle` (local overrides project overrides user), tell the user their choice won't take effect until that override is removed, and offer to remove it.
 - **No output style**: remove the `outputStyle` key from whichever settings file(s) set it. Confirm with the user before touching a project-level file they may share with a team.
 - **Confirm**: state what's now active and which file controls it. Note that if the change doesn't take effect immediately, starting a new session will pick it up.
