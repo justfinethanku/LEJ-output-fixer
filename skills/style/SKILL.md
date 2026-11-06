@@ -49,23 +49,19 @@ Interview the user conversationally — a few quick questions, not a form:
 4. Formatting rules — bullets vs. prose, headers, code-comment style, anything they always want?
 5. Pet peeves — phrases or habits Claude should never do?
 
-Then write `~/.claude/output-styles/<kebab-case-name>.md`:
+Save the agreed answers with [scripts/create_preset.py](scripts/create_preset.py), using Python 3 and a JSON object on stdin. Serialize the answers as JSON; keep user text out of shell arguments. For example:
 
-```markdown
----
-name: <Their Name>
-description: <one line, shown in pickers>
-keep-coding-instructions: true
----
-
-# <Their Name>
-
-<Their rules as clear imperatives, one per bullet. Concrete beats abstract: "Max 3 sentences per paragraph" beats "be concise".>
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/style/scripts/create_preset.py" <<'JSON'
+{"name":"Their Name","description":"One line, shown in pickers","instructions":"- Max 3 sentences per paragraph.\n- Define unfamiliar terms."}
+JSON
 ```
 
-Keep `keep-coding-instructions: true` unless the user explicitly wants to replace Claude Code's software-engineering instructions entirely (warn them that's what `false` does).
+The helper quotes metadata, keeps coding instructions by default, and creates a new file in the user's `~/.claude/output-styles/` (or `CLAUDE_CONFIG_DIR/output-styles/` when configured). It preserves existing presets and settings. If the filename already exists, explain the collision and ask for a different name; do not overwrite their preset. On success, read its JSON `path` and `reference`, refresh the catalog and offer to activate the new preset (Step 3).
 
-Save it to the user's own `~/.claude/output-styles/` — never into the plugin's directory (their preset must survive plugin updates). Then offer to activate it (Step 3).
+Only pass `"keep_coding_instructions": false` if the user explicitly wants to replace Claude Code's software-engineering instructions entirely (warn them that's what `false` does). Write their rules as clear imperatives: "Max 3 sentences per paragraph" beats "be concise".
+
+If Python 3 is unavailable, write the same file directly: encode the name and description as quoted YAML strings, keep `keep-coding-instructions: true` by default, and create a new file without overwriting an existing path. Save only in the user's output-styles directory, never in this plugin, so their preset survives updates. Refresh the catalog to verify the exact name before offering activation.
 
 ## Guardrails
 
