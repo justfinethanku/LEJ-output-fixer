@@ -9,12 +9,17 @@ You are helping the user choose or create an output style. Output styles are nat
 
 ## Step 1 — Gather the options
 
-Build the full list of available styles:
+Use Claude Code's resolved catalog rather than maintaining a second list of style names. Check `claude --version` first. On v2.1.269 or newer, run this read-only local command from the current project directory:
 
-1. **Bundled with this plugin**: Scannable, Bottom Line First, Walk Me Through It.
-2. **Built-in**: Explanatory, Learning.
-3. **The user's own**: list `*.md` in `~/.claude/output-styles/` and `.claude/output-styles/` (if present). Read each file's frontmatter for `name` and `description`. Skip files without frontmatter.
-4. **Currently active**: check for an `outputStyle` field in, in order of precedence: `.claude/settings.local.json`, `.claude/settings.json`, `~/.claude/settings.json`. Note which style is active and which file sets it.
+```bash
+claude --print --no-session-persistence --output-format json --plugin-dir "${CLAUDE_PLUGIN_ROOT}" /output-style
+```
+
+Read the JSON `result`: it lists the available built-in, plugin, user and project styles, their descriptions, and the current style. Keep each exact reference with its menu entry, including any plugin namespace. The catalog resolves names and precedence for this Claude Code version. Treat its `default` entry as **No output style**. Listing styles makes no model request; do not replace the command with a natural-language prompt.
+
+On older versions, gather the catalog from files: read this plugin's `output-styles/*.md` under `${CLAUDE_PLUGIN_ROOT}` and its name from `.claude-plugin/plugin.json`; add the older built-ins Explanatory and Learning; then read user `~/.claude/output-styles/` and project `.claude/output-styles/` files, including project directories between the working directory and repository root. Use frontmatter `name` and `description` when present; otherwise use the filename without `.md` as the name. Files without frontmatter are valid styles. For bundled entries, form `<plugin-name>:<style-name>` references; user and built-in entries use plain names.
+
+Check for an `outputStyle` field in, in order of precedence: `.claude/settings.local.json`, `.claude/settings.json`, `~/.claude/settings.json`. Note which file sets it. The catalog can echo a configured reference that no longer exists: if that reference is absent from the available entries, explain that it is unavailable rather than marking it active.
 
 ## Step 2 — Present the menu
 
@@ -29,9 +34,7 @@ Use the AskUserQuestion tool — never make the user type a style name freehand.
 ## Step 3 — Apply the choice
 
 - **A style was chosen**: write `"outputStyle": "<reference>"` into `~/.claude/settings.json` (applies everywhere). If the user says they want it only for this project, use `.claude/settings.local.json` instead. Edit JSON carefully — preserve all existing keys. Use `jq` or a small `python3` round-trip, never a blind overwrite.
-- **The reference format matters.** Styles bundled in a plugin only resolve with the plugin namespace prefix; bare names silently do nothing. Exact values:
-  - This plugin's styles: `lej-output-fixer:Scannable`, `lej-output-fixer:Bottom Line First`, `lej-output-fixer:Walk Me Through It`
-  - Built-in and user-created styles: the plain style name (e.g. `Explanatory`, or the `name` from the user's own file)
+- **The reference format matters.** Write the exact reference attached to the selected catalog entry in Step 1. Plugin styles need their namespace prefix (for example, `lej-output-fixer:Scannable`); bare plugin style names silently do nothing. Built-in and user-created styles use plain names. Do not reconstruct the reference from an abbreviated menu label.
 - **Precedence check**: if a more-specific settings file already sets `outputStyle` (local overrides project overrides user), tell the user their choice won't take effect until that override is removed, and offer to remove it.
 - **No output style**: remove the `outputStyle` key from whichever settings file(s) set it. Confirm with the user before touching a project-level file they may share with a team.
 - **Confirm**: state what's now active and which file controls it. Note that if the change doesn't take effect immediately, starting a new session will pick it up.
