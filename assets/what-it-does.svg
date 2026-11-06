@@ -1,9 +1,11 @@
-<svg viewBox="0 0 960 320" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial, sans-serif">
+<svg viewBox="0 0 960 320" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial, sans-serif" role="img" aria-labelledby="output-fixer-title" aria-describedby="output-fixer-description">
+  <title id="output-fixer-title">LEJ Output Fixer makes Claude's answers easier to read</title>
+  <desc id="output-fixer-description">Dense Claude output becomes answer-first text with short paragraphs. One picker command offers Scannable, Bottom Line First, and Walk Me Through It styles in the terminal and Desktop app.</desc>
   <!-- card background: self-contained so it reads on light and dark GitHub themes -->
   <rect x="0" y="0" width="960" height="320" rx="14" fill="#ffffff" stroke="#d0d0d0" stroke-width="1"/>
 
   <!-- PANEL 1: dense output -->
-  <text x="160" y="48" text-anchor="middle" font-size="15" font-weight="bold" fill="#888" letter-spacing="2">WHAT CLAUDE GIVES YOU</text>
+  <text x="160" y="48" text-anchor="middle" font-size="15" font-weight="bold" fill="#666" letter-spacing="2">WHAT CLAUDE GIVES YOU</text>
   <rect x="40" y="64" width="240" height="176" rx="6" fill="#fafafa" stroke="#aaaaaa" stroke-width="1.5"/>
   <g fill="#9a9a9a">
     <rect x="56" y="80"  width="208" height="5"/><rect x="56" y="91"  width="208" height="5"/>
@@ -20,7 +22,7 @@
   <polygon points="342,142 360,152 342,162" fill="#111"/>
 
   <!-- PANEL 2: the fixer -->
-  <text x="480" y="48" text-anchor="middle" font-size="15" font-weight="bold" fill="#888" letter-spacing="2">ONE COMMAND</text>
+  <text x="480" y="48" text-anchor="middle" font-size="15" font-weight="bold" fill="#666" letter-spacing="2">ONE COMMAND</text>
   <rect x="368" y="64" width="224" height="176" rx="6" fill="#111111"/>
   <text x="480" y="106" text-anchor="middle" font-size="26" font-weight="bold" fill="#ffffff">LEJ</text>
   <text x="480" y="130" text-anchor="middle" font-size="16" font-weight="bold" fill="#ffffff" letter-spacing="1">OUTPUT FIXER</text>
@@ -35,7 +37,7 @@
   <polygon points="654,142 672,152 654,162" fill="#111"/>
 
   <!-- PANEL 3: readable output -->
-  <text x="800" y="48" text-anchor="middle" font-size="15" font-weight="bold" fill="#888" letter-spacing="2">WHAT YOU READ INSTEAD</text>
+  <text x="800" y="48" text-anchor="middle" font-size="15" font-weight="bold" fill="#666" letter-spacing="2">WHAT YOU READ INSTEAD</text>
   <rect x="680" y="64" width="240" height="176" rx="6" fill="#ffffff" stroke="#111" stroke-width="2"/>
   <!-- the answer, first and bold -->
   <rect x="696" y="82" width="184" height="9" fill="#111111"/>
