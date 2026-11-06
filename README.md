@@ -6,9 +6,13 @@
 
 ![Diagram: dense Claude output goes through LEJ Output Fixer and comes out readable, answer first](assets/what-it-does.svg)
 
-## Install it in under a minute
+<a id="install-it-in-under-a-minute"></a>
 
-Paste this to your Claude (terminal or Desktop, doesn't matter):
+## Install it
+
+Use [Claude Code](https://code.claude.com/docs/en/setup) in a terminal or the Desktop app's **Code** tab, with access to a local project. The regular Claude chat tab does not load this plugin. For the terminal commands, check that `claude --version` and `git --version` work first; sign in to Claude Code before using the picker. No repository build or package install is needed.
+
+Paste this into your Claude Code session:
 
 ```
 Install the lej-output-fixer plugin for me:
@@ -17,9 +21,9 @@ Install the lej-output-fixer plugin for me:
 Then start a fresh session, run /lej-output-fixer:style, and help me pick a style.
 ```
 
-That's the whole install. Claude runs the two commands, you pick a style from a menu, done.
+Claude runs the two commands. Start a fresh session before opening the picker; installing the plugin does not select a style.
 
-Rather type it yourself? Same two commands:
+To install from a terminal, run these two commands in order:
 
 ```bash
 claude plugin marketplace add justfinethanku/LEJ-output-fixer
@@ -29,6 +33,15 @@ claude plugin marketplace add justfinethanku/LEJ-output-fixer
 claude plugin install lej-output-fixer@lej
 ```
 
+Check the installation:
+
+```bash
+claude plugin list
+claude plugin details lej-output-fixer@lej
+```
+
+Expect `lej-output-fixer@lej` to be enabled and its details to list the `style` skill. The picker offers the three bundled output styles. Open a fresh Claude Code session and run `/lej-output-fixer:style` there. The slash command belongs in the session, not your shell.
+
 ## Why this exists
 
 You ask Claude a question. You get back a wall of text... dense, jargon-packed, zero paragraph breaks. You read it twice and you're still not sure what the actual answer was.
@@ -37,7 +50,7 @@ You ask Claude a question. You get back a wall of text... dense, jargon-packed, 
 
 Here's the thing: Claude Code already ships with a fix. It's called an output style, and it swaps out the part of Claude's instructions that controls tone and formatting. Not a suggestion layered on top... a real replacement, built into the product.
 
-But the menu for it lives three levels deep in the terminal, and the Desktop app doesn't show it at all. A feature nobody can find is a feature nobody uses.
+In the terminal, `/config` has an Output style menu. Claude Code v2.1.269 and newer also supports `/output-style` to list or switch styles. This plugin adds a guided picker with preset creation, including for local Desktop Code sessions.
 
 So this plugin puts a door on it. Three styles that fix the actual complaints, and one command that lets you switch, turn them off, or build your own.
 
@@ -63,20 +76,48 @@ Run:
 
 You get a menu: the three styles above, any styles you've made yourself, **No output style** to go back to stock Claude, and **Create new preset**.
 
-Pick one and it's active everywhere Claude Code runs for you. Switching and un-switching is the same command again.
+Pick one to save it for your projects on this machine. A project's own `outputStyle` setting takes precedence; the picker points out an override and offers to remove it. You can also ask to apply a style only to the current project. Other machines and cloud sessions have separate settings. Switching and turning styles off use the same command again.
 
 ## Build your own style
 
-Pick **Create new preset** from the menu and Claude interviews you: what should it be called, how formal, how long-winded, what formatting you want, what habits drive you nuts. It writes the style file to your own `~/.claude/output-styles/` folder and offers to turn it on.
+Pick **Create new preset** from the menu and Claude interviews you: what should it be called, how formal, how long-winded, what formatting you want, what habits drive you nuts. It writes the style file to your own `~/.claude/output-styles/` folder and offers to turn it on. If you use `CLAUDE_CONFIG_DIR`, new presets go in that directory's `output-styles/` instead. Python 3 enables the preset-saving helper; the picker has a direct-file fallback when Python is unavailable.
 
 Your custom styles belong to you, not to this plugin. Updates and uninstalls never touch them.
 
 ## Good to know
 
-- **Nothing activates on install.** The plugin never touches your settings until you pick a style from the menu yourself.
-- **One setting, nothing else.** Picking a style writes one field (`outputStyle`) to your Claude settings. Turning styles off removes that field. That's the entire footprint.
+- **Nothing activates on install.** Claude Code records that the plugin is enabled, but leaves your `outputStyle` selection unchanged.
+- **Style selection changes one field.** Picking a style writes `outputStyle` in your user settings (`~/.claude/settings.json` by default), or `.claude/settings.local.json` for a project-only choice. Other settings stay in place. Creating a preset also adds its Markdown file.
 - **New sessions pick up changes.** If a style switch doesn't kick in mid-session, start a fresh session and it's there.
-- **Uninstall**: `claude plugin uninstall lej-output-fixer` puts everything back the way it was. Custom styles you created stay yours.
+
+## Update or uninstall
+
+To fetch the latest listing and update your installed copy, run:
+
+```bash
+claude plugin marketplace update lej
+claude plugin update lej-output-fixer@lej
+```
+
+Start a fresh session afterward. Your custom presets remain in your user directory.
+
+Before uninstalling, run `/lej-output-fixer:style` and choose **No output style**, or select a built-in or custom style you want to keep. Then run this in your terminal:
+
+```bash
+claude plugin uninstall lej-output-fixer@lej
+```
+
+Uninstall removes the plugin but does **not** remove an `outputStyle` value you selected earlier or restore a previous style. Custom presets remain yours. If you already uninstalled, remove the unavailable `lej-output-fixer:…` value from the `outputStyle` field in your settings, preserving the other JSON keys, or select an available style through `/config`. Check project settings for overrides too.
+
+## Troubleshoot
+
+- **`claude: command not found`**: install the [Claude Code CLI](https://code.claude.com/docs/en/setup), reopen your terminal, and check `claude --version`.
+- **Picker missing after install**: check `claude plugin list` in the same local environment, confirm the plugin is enabled, then start a fresh session. Use Desktop's Code tab, not regular chat.
+- **Style stays unchanged**: check `.claude/settings.local.json`, then `.claude/settings.json`, for an `outputStyle` override. Bundled styles require their exact reference, such as `lej-output-fixer:Scannable`; `Scannable` alone does not select this plugin's style. Preserve other settings when editing JSON.
+- **Style disappeared after uninstall**: clear the leftover reference as described in [Update or uninstall](#update-or-uninstall). To see available styles on Claude Code v2.1.269+, run `/output-style` in a session; older terminal versions have `/config`.
+- **Invalid settings JSON or an existing preset name**: fix the JSON error or choose another preset name. The picker does not replace a broken settings file or overwrite an existing preset.
+
+Install, update, catalog discovery, settings precedence, and uninstall behavior were checked with Claude Code **2.1.318** on Linux. The Desktop GUI and a live model following the picker interview were not exercised in that check. See the current [plugin management](https://code.claude.com/docs/en/discover-plugins), [output-style](https://code.claude.com/docs/en/output-styles), and [settings](https://code.claude.com/docs/en/settings) documentation for host behavior.
 
 ## Credit
 
