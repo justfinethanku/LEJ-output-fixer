@@ -76,7 +76,7 @@ Run:
 
 You get a menu: the three styles above, any styles you've made yourself, **No output style** to go back to stock Claude, and **Create new preset**.
 
-Pick one to save it for your projects on this machine. A project's own `outputStyle` setting takes precedence; the picker points out an override and offers to remove it. You can also ask to apply a style only to the current project. Other machines and cloud sessions have separate settings. Switching and turning styles off use the same command again.
+Pick one to save it for projects using your active user profile on this machine. A project's own `outputStyle` setting takes precedence; the picker points out an override and offers to remove it. You can also ask to apply a style only to the current project. Other machines and cloud sessions have separate settings. Switching and turning styles off use the same command again.
 
 ## Build your own style
 
@@ -87,7 +87,7 @@ Your custom styles belong to you, not to this plugin. Updates and uninstalls nev
 ## Good to know
 
 - **Nothing activates on install.** Claude Code records that the plugin is enabled, but leaves your `outputStyle` selection unchanged.
-- **Style selection changes one field.** Picking a style writes `outputStyle` in your user settings (`~/.claude/settings.json` by default), or `.claude/settings.local.json` for a project-only choice. Other settings stay in place. Creating a preset also adds its Markdown file.
+- **Style selection changes one field.** Picking a style writes `outputStyle` in your user settings (`~/.claude/settings.json` by default), or the host's project-local settings file for a project-only choice. `CLAUDE_CONFIG_DIR` selects a custom user profile when set; project-local settings can live at the repository root or main checkout of a linked worktree. Other settings stay in place. Creating a preset also adds its Markdown file.
 - **New sessions pick up changes.** If a style switch doesn't kick in mid-session, start a fresh session and it's there.
 
 ## Update or uninstall
@@ -109,11 +109,13 @@ claude plugin uninstall lej-output-fixer@lej
 
 Uninstall removes the plugin but does **not** remove an `outputStyle` value you selected earlier or restore a previous style. Custom presets remain yours. If you already uninstalled, remove the unavailable `lej-output-fixer:…` value from the `outputStyle` field in your settings, preserving the other JSON keys, or select an available style through `/config`. Check project settings for overrides too.
 
+For collisions, renamed or deleted presets, overlapping settings and a verified-ref rollback, follow [Recover a missing or renamed output style](RECOVERY.md).
+
 ## Troubleshoot
 
 - **`claude: command not found`**: install the [Claude Code CLI](https://code.claude.com/docs/en/setup), reopen your terminal, and check `claude --version`.
 - **Picker missing after install**: check `claude plugin list` in the same local environment, confirm the plugin is enabled, then start a fresh session. Use Desktop's Code tab, not regular chat.
-- **Style stays unchanged**: check `.claude/settings.local.json`, then `.claude/settings.json`, for an `outputStyle` override. Bundled styles require their exact reference, such as `lej-output-fixer:Scannable`; `Scannable` alone does not select this plugin's style. Preserve other settings when editing JSON.
+- **Style stays unchanged**: identify the active profile and actual project settings sources as described in the [recovery guide](RECOVERY.md#identify-the-active-profile-and-selection). Check for an `outputStyle` override. Bundled styles require their exact reference, such as `lej-output-fixer:Scannable`; `Scannable` alone does not select this plugin's style. Preserve other settings when editing JSON.
 - **Style disappeared after uninstall**: clear the leftover reference as described in [Update or uninstall](#update-or-uninstall). To see available styles on Claude Code v2.1.269+, run `/output-style` in a session; older terminal versions have `/config`.
 - **Invalid settings JSON or an existing preset name**: fix the JSON error or choose another preset name. The picker does not replace a broken settings file or overwrite an existing preset.
 
