@@ -25,13 +25,17 @@ Record the actual settings sources for this session and their `outputStyle` valu
 
 ## Step 2 — Present the menu
 
-Use the AskUserQuestion tool — never make the user type a style name freehand.
+Prefer the AskUserQuestion tool. If it is unavailable or the user prefers text, present the same choices as a numbered list and accept a number or a short answer. Keep the exact catalog reference attached to each choice; the user need not type a namespaced reference.
 
-- Mark the currently active style in its option description.
-- AskUserQuestion allows max 4 options per question. With more choices than fit, lead with the most relevant (bundled presets first, then the user's own) and make the last option "More options…" — if chosen, ask a follow-up question with the rest.
+- State the current selection in text before the menu, including when it is unavailable or overridden. Mark an available active style with the word "Current" in its description; do not rely on color, an icon or the initial highlighted option.
+- AskUserQuestion allows max 4 options per question. Build one ordered list for this menu visit (bundled presets first, then the user's own, then the remaining entries). For a longer list, show up to two entries per page, plus **Previous page** and **Next page** only where those pages exist. State "Style choices, page X of Y" in the question. Keep the order and choice-to-reference mapping stable while paging; return to the same page when going back. Navigation does not select or write a style.
+- Use distinct labels and short descriptions. If names need abbreviation, retain the full name in the description and disambiguate similar choices with their source when known. Use a simple list in the text fallback, without columns, decorative separators or animation. Host focus, wrapping, zoom and screen-reader announcements belong to Claude Code; do not claim to control them.
 - The menu must always offer a path to two special entries:
   - **No output style** — return to Claude Code's default voice.
   - **Create new preset** — build a custom style (Step 4).
+
+If the user dismisses the question or asks to cancel, stop without applying the highlighted option or changing settings. If the catalog changes before applying a choice, refresh it, explain any unavailable selection and ask again rather than choosing a substitute silently.
+For an ambiguous or invalid text reply, clarify the choice without writing settings or making the user re-enter a full reference.
 
 ## Step 3 — Apply the choice
 
@@ -60,7 +64,17 @@ python3 "${CLAUDE_PLUGIN_ROOT}/skills/style/scripts/create_preset.py" <<'JSON'
 JSON
 ```
 
-The helper quotes metadata, keeps coding instructions by default, and creates a new file in `USER_CONFIG/output-styles/`. It preserves existing presets and settings. If the filename already exists, explain the collision and ask for a different name; do not overwrite their preset. On success, read its JSON `path` and `reference`, refresh the catalog and offer to activate the new preset (Step 3). A filename rename does not change a frontmatter `name`; a deleted preset can leave a stale settings reference. Use the refreshed catalog rather than deriving a new reference from a filename or automatically repairing settings after an update or rollback.
+The helper quotes metadata, keeps coding instructions by default, and creates a new file in `USER_CONFIG/output-styles/`. It preserves existing presets and settings. On success, read its JSON `path` and `reference` and say that the preset was saved. Separately refresh the catalog and controlling settings to report the effective selection: an existing setting may already name the newly available preset. Offer activation through Step 3 if needed; saving alone does not prove which style is effective. A filename rename does not change a frontmatter `name`; a deleted preset can leave a stale settings reference. Use the refreshed catalog rather than deriving a new reference from a filename or automatically repairing settings after an update or rollback.
+
+### Recover without repeating the interview
+
+Keep the agreed name, description, instructions and coding-instruction choice in this conversation until the user finishes or cancels. After a failed save, identify the affected field or file in plain text, explain the known correction and say whether a save was confirmed. A raw traceback or color alone is not the user-facing error. Do not start the interview over or ask for unchanged answers again.
+
+- **Filename already exists**: explain that different names can use the same filename. Inspect that existing preset before suggesting another save: an earlier attempt may already have succeeded. Offer to use it if it matches the agreed content, change only the new preset's name while retaining the other answers, or cancel. Do not overwrite, delete or activate an existing preset as a side effect of recovery.
+- **Invalid input**: name the field and the correction, such as a nonempty description or a one-line name. Ask only for that field and retain the other agreed answers.
+- **Other save error or missing acknowledgement**: retain the answers and inspect the intended destination before retrying; do not claim the preset was saved or activated without evidence. Explain the observed failure and offer a retry after its cause is resolved, or cancel. If a complete matching preset is already present, refresh the catalog and offer activation instead of creating it again. Use the [recovery guide](../../RECOVERY.md) when more investigation is needed.
+
+Before each retry, summarize just the correction and wait for the user's choice. After a confirmed save, refresh and report the effective selection, then offer activation with the exact reference if needed. If the user cancels, make no further writes; say whether a preset was already saved and that cancellation does not remove it. Do not promise recovery of interview answers across a closed session.
 
 Only pass `"keep_coding_instructions": false` if the user explicitly wants to replace Claude Code's software-engineering instructions entirely (warn them that's what `false` does). Write their rules as clear imperatives: "Max 3 sentences per paragraph" beats "be concise".
 
