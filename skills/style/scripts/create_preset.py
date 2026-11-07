@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import re
 import sys
+import tempfile
 
 
 def create_preset(data, config_dir=None):
@@ -32,6 +33,8 @@ def create_preset(data, config_dir=None):
         f'---\n{metadata}\nkeep-coding-instructions: {str(keep).lower()}\n---\n\n'
         f'{data["instructions"].rstrip()}\n'
     )
+    # Reject invalid Unicode before creating a path that the loader can discover.
+    encoded = content.encode('utf-8')
     slug = ''.join(c if c.isalnum() else '-' for c in data['name'].lower())
     slug = re.sub('-+', '-', slug).strip('-')[:60].rstrip('-') or 'custom-style'
     if config_dir is None:
@@ -39,9 +42,20 @@ def create_preset(data, config_dir=None):
     directory = Path(config_dir).expanduser() / 'output-styles'
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / f'{slug}.md'
-    # Exclusive creation also handles two simultaneous saves and symlink collisions.
-    with path.open('x', encoding='utf-8') as output:
-        output.write(content)
+    # Stage outside the loader's *.md catalog, then publish the complete file
+    # without replacing an existing preset (including a symlink or racing save).
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=directory, prefix='.preset-',
+                                         suffix='.tmp', delete=False) as output:
+            temporary = Path(output.name)
+            output.write(encoded)
+            output.flush()
+            os.fsync(output.fileno())
+        os.link(temporary, path)
+    finally:
+        if temporary is not None:
+            temporary.unlink()
     return {'path': str(path.resolve()), 'reference': data['name']}
 
 

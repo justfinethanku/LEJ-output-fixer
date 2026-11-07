@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -110,6 +111,58 @@ class PresetTests(PresetFixture, unittest.TestCase):
         self.assertEqual(len(winners), 1)
         content = Path(results[winners[0]]['path']).read_text()
         self.assertTrue(content.endswith(f'- Writer {winners[0]}.\n'))
+
+    def test_preset_is_complete_before_it_becomes_discoverable(self):
+        path = self.config / 'output-styles/my-brief.md'
+        observed = []
+        def inspect_public_file(frame, event, _argument):
+            # Observe each Python interleaving in the saver without requiring
+            # any particular publication syscall or staging implementation.
+            if frame.f_code.co_filename == str(SCRIPT) and event == 'line' and path.is_file():
+                content = path.read_text()
+                observed.append(content)
+                self.assertTrue(content.endswith(self.data['instructions']))
+                self.assertIn('\nkeep-coding-instructions: true\n', content)
+            return inspect_public_file
+        previous_trace = sys.gettrace()
+        try:
+            sys.settrace(inspect_public_file)
+            self.create()
+        finally:
+            sys.settrace(previous_trace)
+        self.assertTrue(observed)
+        self.assertEqual(list(path.parent.iterdir()), [path])
+
+    def test_failed_flush_leaves_no_preset_and_retry_succeeds(self):
+        with mock.patch.object(module.os, 'fsync', side_effect=OSError('disk full')):
+            with self.assertRaises(OSError):
+                self.create()
+        directory = self.config / 'output-styles'
+        self.assertEqual(list(directory.iterdir()), [])
+        self.assertTrue(Path(self.create()['path']).is_file())
+
+    def test_invalid_unicode_does_not_reserve_preset_name(self):
+        with self.assertRaises(UnicodeError):
+            self.create(instructions='Bad Unicode: \ud800')
+        self.assertFalse(self.config.exists())
+        self.assertTrue(Path(self.create()['path']).is_file())
+
+    def test_racing_replacement_survives_failed_publication(self):
+        target = self.home / 'existing.md'
+        target.write_text('Existing user content\n')
+        real_link = os.link
+        def replaced(source, destination):
+            # A second owner takes this name after staging; cleanup must only
+            # remove our temporary file, never their destination or its target.
+            Path(destination).symlink_to(target)
+            real_link(source, destination)
+        with mock.patch.object(module.os, 'link', side_effect=replaced):
+            with self.assertRaises(FileExistsError):
+                self.create()
+        directory = self.config / 'output-styles'
+        self.assertEqual([p.name for p in directory.iterdir()], ['my-brief.md'])
+        self.assertTrue((directory / 'my-brief.md').is_symlink())
+        self.assertEqual(target.read_text(), 'Existing user content\n')
 
     def test_invalid_input_does_not_create_any_files(self):
         invalid = [None, [], {}, {**self.data, 'name': ''},
