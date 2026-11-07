@@ -1,5 +1,6 @@
 """Save an interviewed preset from a JSON object on stdin; print its path and name."""
 
+from contextlib import suppress
 import json
 import os
 from pathlib import Path
@@ -55,7 +56,10 @@ def create_preset(data, config_dir=None):
         os.link(temporary, path)
     finally:
         if temporary is not None:
-            temporary.unlink()
+            # Cleanup cannot undo publication or replace its original error.
+            # An alias left behind is a .tmp file, outside the style catalog.
+            with suppress(OSError):
+                temporary.unlink()
     return {'path': str(path.resolve()), 'reference': data['name']}
 
 
