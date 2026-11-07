@@ -7,6 +7,7 @@ They make zero model requests and never use the operator's settings or auth.
 
 from concurrent.futures import ThreadPoolExecutor
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -163,6 +164,40 @@ class PresetTests(PresetFixture, unittest.TestCase):
         self.assertEqual([p.name for p in directory.iterdir()], ['my-brief.md'])
         self.assertTrue((directory / 'my-brief.md').is_symlink())
         self.assertEqual(target.read_text(), 'Existing user content\n')
+
+    def test_cleanup_failure_after_publication_still_acknowledges_cli_save(self):
+        real_unlink = Path.unlink
+        def failed_cleanup(path, *args, **kwargs):
+            if path.name.startswith('.preset-'):
+                raise PermissionError('staging cleanup unavailable')
+            return real_unlink(path, *args, **kwargs)
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with mock.patch.object(Path, 'unlink', failed_cleanup), \
+             mock.patch.dict(os.environ, self.isolated_env(), clear=True), \
+             mock.patch.object(sys, 'stdin', io.StringIO(json.dumps(self.data))), \
+             mock.patch.object(sys, 'stdout', stdout), \
+             mock.patch.object(sys, 'stderr', stderr):
+            status = module.main()
+        self.assertEqual(status, 0, stderr.getvalue())
+        result = json.loads(stdout.getvalue())
+        path = Path(result['path'])
+        self.assertEqual(result['reference'], self.data['name'])
+        self.assertTrue(path.read_text().endswith(self.data['instructions']))
+        # The complete preset is committed even if its ignored staging alias
+        # remains. A delayed retry must never replace it with a new body.
+        before = path.read_bytes()
+        with self.assertRaises(FileExistsError):
+            self.create(instructions='Delayed retry must not replace the save.')
+        self.assertEqual(path.read_bytes(), before)
+
+    def test_cleanup_failure_does_not_mask_publication_error(self):
+        with mock.patch.object(module.os, 'link', side_effect=OSError('publication unavailable')), \
+             mock.patch.object(Path, 'unlink', side_effect=PermissionError('cleanup unavailable')):
+            with self.assertRaisesRegex(OSError, '^publication unavailable$'):
+                self.create()
+        directory = self.config / 'output-styles'
+        self.assertEqual(list(directory.glob('*.md')), [])
+        self.assertTrue(Path(self.create()['path']).is_file())
 
     def test_invalid_input_does_not_create_any_files(self):
         invalid = [None, [], {}, {**self.data, 'name': ''},
